@@ -1,4 +1,3 @@
-
 // Тест проверяет, что поисковая система исключает стоп-слова при добавлении документов
 void TestExcludeStopWordsFromAddedDocumentContent() {
 	const int doc_id = 42;
@@ -65,16 +64,29 @@ void TestMatching()
 		ASSERT(found_doc.empty());
 	}
 
+
+	const int doc_id = 42;
+	const string content = "cat in the city"s;
+	const vector<int> ratings = { 1, 2, 3 };
+
 	{
-		const int doc_id = 42;
-		const string content = "cat in the city"s;
-		const vector<int> ratings = { 1, 2, 3 };
-
-
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		const auto [words, status] = server.MatchDocument("city", 42);
+		const auto doc = server.MatchDocument("city", 42);
+
+		ASSERT(!words.empty());
 		ASSERT_EQUAL(words[0], "city"s);
+		ASSERT(status == DocumentStatus::ACTUAL);
+	}
+
+	{
+		SearchServer server;
+		server.AddDocument(doc_id, content, DocumentStatus::BANNED, ratings);
+		const auto [words, status] = server.MatchDocument("-cat", 42);
+
+		ASSERT(words.empty());
+		ASSERT(status == DocumentStatus::BANNED);
 	}
 }
 
@@ -107,8 +119,6 @@ void TestRelevance()
 	ASSERT_EQUAL(doc.size(), 2u);
 	ASSERT_EQUAL(doc[0].id, 4);
 	ASSERT_EQUAL(doc[1].id, 3);
-	ASSERT_EQUAL(doc[1].id, 3);
-	ASSERT_EQUAL(doc[2].id, 3);
 
 }
 
@@ -142,26 +152,26 @@ void TestRating()
 	vector<Document> found_docs_rating_1 =
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 1; });
-	ASSERT_EQUAL(found_docs_rating_1[0].id, 1);
 	ASSERT_EQUAL(found_docs_rating_1.size(), 1u);
+	ASSERT_EQUAL(found_docs_rating_1.at(0).id, 1);
 
 	vector<Document> found_docs_rating_2 =
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 2; });
-	ASSERT_EQUAL(found_docs_rating_2[0].id, 2);
 	ASSERT_EQUAL(found_docs_rating_2.size(), 1u);
+	ASSERT_EQUAL(found_docs_rating_2.at(0).id, 2);
 
 	vector<Document> found_docs_rating_3 =
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 3; });
-	ASSERT_EQUAL(found_docs_rating_3[0].id, 3);
 	ASSERT_EQUAL(found_docs_rating_3.size(), 1u);
+	ASSERT_EQUAL(found_docs_rating_3.at(0).id, 3);
 
 	vector<Document> found_docs_rating_4 =
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 4; });
-	ASSERT_EQUAL(found_docs_rating_4[0].id, 4);
 	ASSERT_EQUAL(found_docs_rating_4.size(), 1u);
+	ASSERT_EQUAL(found_docs_rating_4.at(0).id, 4);
 }
 
 void testPredicat()
@@ -201,26 +211,25 @@ void TestStatus()
 
 	string query = "кот хвост";
 
-	// test BANNED status
 	vector<Document> found_docs_banned =
 		server.FindTopDocuments(query, DocumentStatus::BANNED);
-	ASSERT_EQUAL(found_docs_banned[0].id, 1);
 	ASSERT_EQUAL(found_docs_banned.size(), 1u);
+	ASSERT_EQUAL(found_docs_banned.at(0).id, 1);
 
 	vector<Document> found_docs_irrelevant =
 		server.FindTopDocuments(query, DocumentStatus::IRRELEVANT);
-	ASSERT_EQUAL(found_docs_irrelevant[0].id, 2);
 	ASSERT_EQUAL(found_docs_irrelevant.size(), 1u);
+	ASSERT_EQUAL(found_docs_irrelevant.at(0).id, 2);
 
 	vector<Document> found_docs_removed =
 		server.FindTopDocuments(query, DocumentStatus::REMOVED);
-	ASSERT_EQUAL(found_docs_removed[0].id, 3);
 	ASSERT_EQUAL(found_docs_removed.size(), 1u);
+	ASSERT_EQUAL(found_docs_removed.at(0).id, 3);
 
 	vector<Document> found_docs_actual =
 		server.FindTopDocuments(query, DocumentStatus::ACTUAL);
-	ASSERT_EQUAL(found_docs_actual[0].id, 4);
 	ASSERT_EQUAL(found_docs_actual.size(), 1u);
+	ASSERT_EQUAL(found_docs_actual.at(0).id, 4);
 }
 
 void TestFindByRelevance()
@@ -250,9 +259,11 @@ void TestFindByRelevance()
 	string query = "белый пушистый кот длинный хвост";
 
 	vector<Document> found_doc_1 = server.FindTopDocuments(query);
+	ASSERT(!found_doc_1.empty());
 	ASSERT_EQUAL(found_doc_1[0].id, 3);
 
 	vector<Document> found_doc_2 = server.FindTopDocuments(query);
+	ASSERT(!found_doc_2.empty());
 	ASSERT_EQUAL(found_doc_2[1].id, 4);
 }
 
@@ -269,3 +280,4 @@ void TestSearchServer()
 	RUN_TEST(TestStatus);
 	RUN_TEST(TestFindByRelevance);
 }
+ 
