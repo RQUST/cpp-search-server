@@ -1,3 +1,5 @@
+
+// “ест провер€ет, что поискова€ система исключает стоп-слова при добавлении документов
 void TestExcludeStopWordsFromAddedDocumentContent() {
 	const int doc_id = 42;
 	const string content = "cat in the city"s;
@@ -18,6 +20,10 @@ void TestExcludeStopWordsFromAddedDocumentContent() {
 		ASSERT_HINT(server.FindTopDocuments("in"s).empty(), "Stop words must be excluded from documents"s);
 	}
 }
+
+/*
+–азместите код остальных тестов здесь
+*/
 
 void TestMinusWords()
 {
@@ -41,21 +47,35 @@ void TestMinusWords()
 
 void TestMatching()
 {
-	SearchServer server;
-	vector<string> documents = { "белый кот пушистый хвост", "черный кот с бантом",
-								"п€тнистый пЄс с добрыми глазами",
-								"тарантул аркадий", "попугай инокентий" };
-
-	vector<int> rating = { 1, 2, 3, 4, 5, 6, 7, 1, 1, 1, 1 };
-	int i = 1;
-
-	for (const string& doc : documents)
 	{
-		server.AddDocument(++i, doc, DocumentStatus::ACTUAL, rating);
+		SearchServer server;
+		vector<string> documents = { "белый кот пушистый хвост", "черный кот с бантом",
+									"п€тнистый пЄс с добрыми глазами",
+									"тарантул аркадий", "попугай инокентий" };
+
+		vector<int> rating = { 1, 2, 3, 4, 5, 6, 7, 1, 1, 1, 1 };
+		int i = 1;
+
+		for (const string& doc : documents)
+		{
+			server.AddDocument(++i, doc, DocumentStatus::ACTUAL, rating);
+		}
+
+		vector<Document> found_doc = server.FindTopDocuments("crocodile Henrique");
+		ASSERT(found_doc.empty());
 	}
 
-	vector<Document> found_doc = server.FindTopDocuments("crocodile Henrique");
-	ASSERT(found_doc.empty());
+	{
+		const int doc_id = 42;
+		const string content = "cat in the city"s;
+		const vector<int> ratings = { 1, 2, 3 };
+
+
+		SearchServer server;
+		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
+		const auto [words, status] = server.MatchDocument("city", 42);
+		ASSERT_EQUAL(words[0], "city"s);
+	}
 }
 
 void TestRelevance()
@@ -83,8 +103,13 @@ void TestRelevance()
 	server.AddDocument(id, document4, status, ratings_4);
 
 	vector<Document> doc = server.FindTopDocuments("белый пушистый кот");
+
+	ASSERT_EQUAL(doc.size(), 2u);
 	ASSERT_EQUAL(doc[0].id, 4);
 	ASSERT_EQUAL(doc[1].id, 3);
+	ASSERT_EQUAL(doc[1].id, 3);
+	ASSERT_EQUAL(doc[2].id, 3);
+
 }
 
 void TestRating()
@@ -118,21 +143,25 @@ void TestRating()
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 1; });
 	ASSERT_EQUAL(found_docs_rating_1[0].id, 1);
+	ASSERT_EQUAL(found_docs_rating_1.size(), 1u);
 
 	vector<Document> found_docs_rating_2 =
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 2; });
 	ASSERT_EQUAL(found_docs_rating_2[0].id, 2);
+	ASSERT_EQUAL(found_docs_rating_2.size(), 1u);
 
 	vector<Document> found_docs_rating_3 =
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 3; });
 	ASSERT_EQUAL(found_docs_rating_3[0].id, 3);
+	ASSERT_EQUAL(found_docs_rating_3.size(), 1u);
 
 	vector<Document> found_docs_rating_4 =
 		server.FindTopDocuments(query, [](int document_id, DocumentStatus status,
 			int rating) { return rating == 4; });
 	ASSERT_EQUAL(found_docs_rating_4[0].id, 4);
+	ASSERT_EQUAL(found_docs_rating_4.size(), 1u);
 }
 
 void testPredicat()
@@ -145,6 +174,9 @@ void testPredicat()
 	vector<Document> found_doc = server.FindTopDocuments(
 		"kot", [](int document_id, DocumentStatus status, int rating)
 		{ return status == DocumentStatus::REMOVED; });
+
+	ASSERT_EQUAL(found_doc.size(), 1);
+	ASSERT_EQUAL(found_doc[0].id, 1);
 }
 
 void TestStatus()
@@ -173,18 +205,22 @@ void TestStatus()
 	vector<Document> found_docs_banned =
 		server.FindTopDocuments(query, DocumentStatus::BANNED);
 	ASSERT_EQUAL(found_docs_banned[0].id, 1);
+	ASSERT_EQUAL(found_docs_banned.size(), 1u);
 
 	vector<Document> found_docs_irrelevant =
 		server.FindTopDocuments(query, DocumentStatus::IRRELEVANT);
 	ASSERT_EQUAL(found_docs_irrelevant[0].id, 2);
+	ASSERT_EQUAL(found_docs_irrelevant.size(), 1u);
 
 	vector<Document> found_docs_removed =
 		server.FindTopDocuments(query, DocumentStatus::REMOVED);
 	ASSERT_EQUAL(found_docs_removed[0].id, 3);
+	ASSERT_EQUAL(found_docs_removed.size(), 1u);
 
 	vector<Document> found_docs_actual =
 		server.FindTopDocuments(query, DocumentStatus::ACTUAL);
 	ASSERT_EQUAL(found_docs_actual[0].id, 4);
+	ASSERT_EQUAL(found_docs_actual.size(), 1u);
 }
 
 void TestFindByRelevance()
@@ -220,11 +256,11 @@ void TestFindByRelevance()
 	ASSERT_EQUAL(found_doc_2[1].id, 4);
 }
 
-
+// ‘ункци€ TestSearchServer €вл€етс€ точкой входа дл€ запуска тестов
 void TestSearchServer()
 {
 	RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
-
+	// Ќе забудьте вызывать остальные тесты здесь
 	RUN_TEST(TestMinusWords);
 	RUN_TEST(TestMatching);
 	RUN_TEST(TestRelevance);
