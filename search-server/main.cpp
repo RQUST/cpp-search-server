@@ -64,12 +64,11 @@ void TestMatching()
 		ASSERT(found_doc.empty());
 	}
 
-
-	const int doc_id = 42;
-	const string content = "cat in the city"s;
-	const vector<int> ratings = { 1, 2, 3 };
-
 	{
+		const int doc_id = 42;
+		const string content = "cat in the city"s;
+		const vector<int> ratings = { 1, 2, 3 };
+
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
 		const auto [words, status] = server.MatchDocument("city", 42);
@@ -81,12 +80,36 @@ void TestMatching()
 	}
 
 	{
+		const int doc_id = 42;
+		const string content = "cat in the city"s;
+		const vector<int> ratings = { 1, 2, 3 };
+
 		SearchServer server;
 		server.AddDocument(doc_id, content, DocumentStatus::BANNED, ratings);
 		const auto [words, status] = server.MatchDocument("-cat", 42);
 
 		ASSERT(words.empty());
 		ASSERT(status == DocumentStatus::BANNED);
+	}
+
+	{
+		SearchServer server;
+
+		server.AddDocument(1, "зеленый крокодил длинный хвост", DocumentStatus::ACTUAL, { 1 });
+		server.AddDocument(2, "зеленый попугай красный длинный хвост", DocumentStatus::ACTUAL, { 2 });
+		server.AddDocument(3, "белый кот пушистый хвост", DocumentStatus::ACTUAL, { 3 });
+		server.AddDocument(4, "пушистый кот", DocumentStatus::ACTUAL, { 4 });
+		server.AddDocument(5, "пушистый кот", DocumentStatus::ACTUAL, { 4 });
+
+		vector<Document> doc = server.FindTopDocuments("белый пушистый кот");
+
+		ASSERT(doc[0].rating == 3);
+		ASSERT(doc[1].rating == 4);
+		ASSERT(doc[2].rating == 4);
+
+		ASSERT(doc[0].relevance > doc[1].relevance);
+		ASSERT(doc[0].relevance > doc[2].relevance);
+
 	}
 }
 
