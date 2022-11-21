@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <numeric>
 #include <map>
 #include <set>
 #include <string>
@@ -11,7 +12,7 @@
 using namespace std;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
-inline static constexpr int INVALID_DOCUMENT_ID = -1;
+constexpr double EPSILON = 1e-6;
 
 string ReadLine() {
 	string s;
@@ -92,7 +93,7 @@ public:
 		{
 			if (!CheckSpecialSymbols(s))
 			{
-				throw invalid_argument("CheckSpecialSymbols stop_words_text"s);
+				throw invalid_argument(s);
 			}
 		}
 	}
@@ -100,10 +101,6 @@ public:
 	explicit SearchServer(const string& stop_words_text)
 		: SearchServer(SplitIntoWords(stop_words_text))  // Invoke delegating constructor from string container
 	{
-		if (!CheckSpecialSymbols(stop_words_text))
-		{
-			throw invalid_argument("CheckSpecialSymbols stop_words_text"s);
-		}
 	}
 
 	void  AddDocument(int document_id, const string& document, DocumentStatus status, const vector<int>& ratings)
@@ -121,7 +118,10 @@ public:
 		{
 			throw invalid_argument("AddDocument CheckSpecialSymbols"s);
 		}
-		if (!IsValidWord(document)) return;
+		if (!IsValidWord(document))
+		{
+			throw invalid_argument("AddDocument IsValidWord"s);
+		}
 
 		ids_.push_back(document_id);
 
@@ -137,29 +137,12 @@ public:
 	template <typename DocumentPredicate>
 	vector<Document> FindTopDocuments(const string& raw_query, DocumentPredicate document_predicate) const
 	{
-		if (!CheckDoubleMinus(raw_query))
-		{
-			throw invalid_argument("FindTopDocuments CheckDoubleMinus"s);
-		}
-		if (!CheckNoMinusWord(raw_query))
-		{
-			throw invalid_argument("FindTopDocuments CheckNoMinusWord"s);
-		}
-		if (!CheckSpecialSymbols(raw_query))
-		{
-			throw invalid_argument("FindTopDocuments CheckSpecialSymbols"s);
-		}
-		if (!IsValidWord(raw_query))
-		{
-			throw invalid_argument("FindTopDocuments IsValidWord"s);
-		}
-
 		const Query query = ParseQuery(raw_query);
 		auto matched_documents = FindAllDocuments(query, document_predicate);
 
 		sort(matched_documents.begin(), matched_documents.end(),
 			[](const Document& lhs, const Document& rhs) {
-				if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+				if (abs(lhs.relevance - rhs.relevance) < EPSILON) {
 					return lhs.rating > rhs.rating;
 				}
 				else {
@@ -328,10 +311,7 @@ private:
 		if (ratings.empty()) {
 			return 0;
 		}
-		int rating_sum = 0;
-		for (const int rating : ratings) {
-			rating_sum += rating;
-		}
+		int rating_sum = std::accumulate(ratings.begin(), ratings.end(), 0);
 		return rating_sum / static_cast<int>(ratings.size());
 	}
 
@@ -342,7 +322,25 @@ private:
 		bool is_stop;
 	};
 
-	QueryWord ParseQueryWord(string text) const {
+	QueryWord ParseQueryWord(string text) const
+	{
+		if (!CheckDoubleMinus(text))
+		{
+			throw invalid_argument("invalid_argument"s);
+		}
+		if (!CheckNoMinusWord(text))
+		{
+			throw invalid_argument("invalid_argument"s);
+		}
+		if (!CheckSpecialSymbols(text))
+		{
+			throw invalid_argument("invalid_argument"s);
+		}
+		if (!IsValidWord(text))
+		{
+			throw invalid_argument("invalid_argument"s);
+		}
+
 		bool is_minus = false;
 		// Word shouldn't be empty
 		if (text[0] == '-') {
@@ -431,6 +429,28 @@ void PrintDocument(const Document& document) {
 int main()
 {
 	setlocale(LC_ALL, "");
+
+	try
+	{
+		SearchServer search_server("скво\x12рец"s);
+
+		// явно игнорируем результат метода AddDocument, чтобы избежать предупреждени€
+		// о неиспользуемом результате его вызова
+		(void)search_server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
+		search_server.AddDocument(1, "пушистый пЄс и модный ошейник"s, DocumentStatus::ACTUAL, { 1, 2 });
+
+
+		const auto documents = search_server.FindTopDocuments("--пушистый"s);
+
+		for (const Document& document : documents)
+		{
+			PrintDocument(document);
+		}
+	}
+	catch (const std::invalid_argument& e)
+	{
+		cout << "invalid_argument: "s << e.what() << endl;
+	}
 
 	try
 	{
