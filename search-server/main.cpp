@@ -114,15 +114,6 @@ public:
 			string s = "AddDocument The ID "s + to_string(document_id) + "already exists "s;
 			throw invalid_argument(s);
 		}
-		if (!CheckSpecialSymbols(document))
-		{
-			throw invalid_argument("AddDocument CheckSpecialSymbols"s);
-		}
-		if (!IsValidWord(document))
-		{
-			throw invalid_argument("AddDocument IsValidWord"s);
-		}
-
 		ids_.push_back(document_id);
 
 		const vector<string> words = SplitIntoWordsNoStop(document);
@@ -177,23 +168,6 @@ public:
 
 	tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query, int document_id) const
 	{
-		if (!CheckDoubleMinus(raw_query))
-		{
-			throw invalid_argument("MatchDocument CheckDoubleMinus"s);
-		}
-		if (!CheckNoMinusWord(raw_query))
-		{
-			throw invalid_argument("MatchDocument CheckNoMinusWord"s);
-		}
-		if (!CheckSpecialSymbols(raw_query))
-		{
-			throw invalid_argument("MatchDocument CheckSpecialSymbols"s);
-		}
-		if (!IsValidWord(raw_query))
-		{
-			throw invalid_argument("MatchDocument IsValidWord"s);
-		}
-
 		const Query query = ParseQuery(raw_query);
 		vector<string> matched_words;
 
@@ -322,32 +296,32 @@ private:
 		bool is_stop;
 	};
 
-	QueryWord ParseQueryWord(string text) const
-	{
-		if (!CheckDoubleMinus(text))
-		{
-			throw invalid_argument("invalid_argument"s);
-		}
-		if (!CheckNoMinusWord(text))
-		{
-			throw invalid_argument("invalid_argument"s);
-		}
-		if (!CheckSpecialSymbols(text))
-		{
-			throw invalid_argument("invalid_argument"s);
-		}
+	QueryWord ParseQueryWord(const string& text) const
+	{  
 		if (!IsValidWord(text))
 		{
-			throw invalid_argument("invalid_argument"s);
+			throw invalid_argument(std::string("invalid characters in query: ") + text);
 		}
+
+		string str = text;
 
 		bool is_minus = false;
 		// Word shouldn't be empty
-		if (text[0] == '-') {
+
+		if (text[0] == '-')
+		{
+			if (str.length() == 0)
+			{
+				throw invalid_argument("iblank negative request: "s);
+			}
+			if (str[1] == '-')
+			{
+				throw invalid_argument(std::string("double minus: ") + text);
+			}
 			is_minus = true;
-			text = text.substr(1);
+			str = text.substr(1);
 		}
-		return { text, is_minus, IsStopWord(text) };
+		return { str, is_minus, IsStopWord(str) };
 	}
 
 	struct Query {
