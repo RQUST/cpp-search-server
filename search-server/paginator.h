@@ -1,8 +1,9 @@
 #pragma once
- 
+
 #include <ostream>
 #include <iterator>
 #include <vector>
+#include <cassert>
 
 template <typename Iterator>
 class IteratorRange
@@ -38,6 +39,8 @@ class Paginator
 public:
 	Paginator(Iterator begin, Iterator end, size_t page_size)
 	{
+		assert(end >= begin && page_size > 0);
+
 		for (size_t left = std::distance(begin, end); left > 0;)
 		{
 			const size_t current_page_size = std::min(page_size, left);
@@ -59,7 +62,7 @@ private:
 };
 
 template <typename Container>
-auto Paginate(const Container& c, size_t page_size) 
+auto Paginate(const Container& c, size_t page_size)
 {
 	return Paginator(begin(c), end(c), page_size);
 }

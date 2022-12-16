@@ -12,12 +12,14 @@
 #include <string>
 
 
+#include "read_input_functions.h"
 #include "string_processing.h"
 #include "document.h"
 
 using namespace std::string_literals; 
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
+constexpr double EPSILON = 1e-6;
 
 
 class SearchServer
@@ -115,7 +117,7 @@ inline std::vector<Document> SearchServer::FindTopDocuments(const std::string& r
 	std::sort(matched_documents.begin(), matched_documents.end(),
 		[](const Document& lhs, const Document& rhs) {
 			return lhs.relevance > rhs.relevance
-			|| (std::abs(lhs.relevance - rhs.relevance) < 1e-6 && lhs.rating > rhs.rating);
+			|| (std::abs(lhs.relevance - rhs.relevance) < EPSILON && lhs.rating > rhs.rating);
 		});
 	if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
 		matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
