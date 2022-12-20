@@ -15,6 +15,9 @@
 #include "request_queue.h" 
 
 
+#include "log_duration.h" 
+
+
 using namespace std::string_literals;
 using namespace std;
 
@@ -40,6 +43,8 @@ void AddDocument(SearchServer& search_server, int document_id, const std::string
 }
 
 void FindTopDocuments(const SearchServer& search_server, const std::string& raw_query) {
+    LOG_DURATION_STREAM("FindTopDocuments", std::cout);
+
     std::cout << "Results for request: "s << raw_query << std::endl;
     try {
         for (const Document& document : search_server.FindTopDocuments(raw_query)) {
@@ -52,6 +57,8 @@ void FindTopDocuments(const SearchServer& search_server, const std::string& raw_
 }
 
 void MatchDocuments(const SearchServer& search_server, const std::string& query) {
+    LOG_DURATION_STREAM("MatchDocuments", std::cout);
+
     try {
         std::cout << "Matching for request: "s << query << std::endl;
         const int document_count = search_server.GetDocumentCount();
