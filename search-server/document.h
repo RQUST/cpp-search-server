@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& out, const Document& document);
 
 void PrintDocument(const Document& document);
 
-enum class DocumentStatus 
+enum class DocumentStatus
 {
     ACTUAL,
     IRRELEVANT,

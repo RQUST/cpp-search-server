@@ -16,7 +16,7 @@
 #include "string_processing.h"
 #include "document.h"
 
-using namespace std::string_literals; 
+using namespace std::string_literals;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
 constexpr double EPSILON = 1e-6;
@@ -48,6 +48,14 @@ public:
 
 	int GetDocumentId(int index) const { return document_ids_.at(index); }
 
+	auto begin() const { return document_ids_.begin();}
+
+	auto end() const { return document_ids_.end(); }
+
+	const std::map<std::string, double>& GetWordFrequencies(int document_id) const;
+
+	void RemoveDocument(int document_id);
+
 	std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string& raw_query,
 		int document_id) const;
 
@@ -60,6 +68,7 @@ private:
 
 	const std::set<std::string> stop_words_;
 	std::map<std::string, std::map<int, double>> word_to_document_freqs_;
+	std::map<int, std::map<std::string, double>> document_to_word_freqs_;
 	std::map<int, DocumentData> documents_;
 	std::vector<int> document_ids_;
 	bool IsStopWord(const std::string& word) const {
@@ -90,8 +99,9 @@ private:
 	Query ParseQuery(const std::string& text) const;
 
 	// Existence required
-	double ComputeWordInverseDocumentFreq(const std::string& word) const{
-		return std::log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());}
+	double ComputeWordInverseDocumentFreq(const std::string& word) const {
+		return std::log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());
+	}
 
 	template <typename DocumentPredicate>
 	std::vector<Document> FindAllDocuments(const Query& query,

@@ -1,12 +1,12 @@
 #pragma once
- 
+
 #include <iostream>
 #include <map>
 #include <set>  
 #include <vector>
 #include <numeric>
 #include <string>
-  
+
 std::vector<std::string> SplitIntoWords(const std::string& text);
 
 template <typename StringContainer>
